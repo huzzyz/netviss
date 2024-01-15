@@ -1,0 +1,66 @@
+{
+  "name": "NETVISS",
+  "serverAddress": "192.168.61.71",
+  "sharedKey": "jhgiegakgeauigkafkjasca",
+  "authPort": 80,
+  "authType": "AD",
+  "adAuth": {
+    "serverName": "Testing",
+    "hostName": "80.65.211.100",
+    "serverPort": 389,
+    "bindDn": "test1",
+    "bindPassword": "Test@2023",
+    "sslConnection": false,
+    "externalGroupSearchBase": "DC=netviss,DC=local",
+    "externalGroupSearchFilter": "sAMAccountName",
+    "externalGroupHandleClassName": ""
+  },
+  "ldapAuth": {
+    "serverAddress": "",
+    "serverPort": 0,
+    "baseDn": "",
+    "bindDn": "",
+    "bindPassword": "",
+    "searchAttribute": "",
+    "sslConnection": "",
+    "certificate": "",
+    "dataSource": "",
+    "whereClauseUser": "",
+    "keyUser": "",
+    "keyMeberships": "",
+    "keyMobile": "",
+    "keyEmail": "",
+    "keyAddress": ""
+  },
+  "clients": [
+    {
+      "name": "netviss testing",
+      "ip": "192.168.61.71",
+      "coaPort": 80,
+      "sharedKey": "uyyfufkkuiffkujkf"
+    },
+    {
+      "name": "netviss client",
+      "ip": "192.168.61.70",
+      "coaPort": 80,
+      "sharedKey": "uyyfufkkuiffkujkf"
+    }
+  ],
+  "configs": {
+    "AUTH_PORT": "1812",
+    "EAP_AUTH": "true",
+    "PEAP": "true",
+    "EAP_TLS": "false",
+    "EAP_EXTERNAL_CERTIFICATE": "false",
+    "MAC_AUTH_NODE_GROUP": "false",
+    "MAB_AUTH_USERID": "Test",
+    "GENERATING_ACCOUNTING": "false",
+    "LOCAL_USER_AUTH": "false",
+    "WEBHOOK_AUTH": "false",
+    "EMAIL_AUTH": "false",
+    "LDAP_AUTH": "false",
+    "DEBUG_LOG": "false",
+    "ACCOUNTING_PORT": "1813",
+    "SINGLE_SIGN_ON": "false"
+  }
+}
