@@ -7,9 +7,9 @@ import bcrypt
 fake = Faker()
 
 # Database connection parameters
-db_name = "your_database_name"
-user = "your_username"  # replace with your PostgreSQL username
-password = "your_password"  # replace with your PostgreSQL password
+db_name = "netviss"
+user = "ali"  # replace with your PostgreSQL username
+password = "ali321"  # replace with your PostgreSQL password
 host = "localhost"  # or your database host
 port = "5432"  # or your database port
 
