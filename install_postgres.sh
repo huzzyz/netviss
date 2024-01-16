@@ -1,13 +1,14 @@
-#!/bin/bash
+# Install virtualenv if not already installed
+sudo apt-get install -y python3-venv
 
-# Update system's package index
-sudo apt-get update
+# Create a virtual environment in your project directory
+python3 -m venv myenv
 
-# Install PostgreSQL and its dependencies
-sudo apt-get install -y postgresql postgresql-contrib
+# Activate the virtual environment
+source myenv/bin/activate
 
-# Install pip for Python 3
-sudo apt-get install -y python3-pip
+# Now install packages using pip
+pip install bcrypt
 
-# Install bcrypt using pip
-pip3 install bcrypt
+# To deactivate the virtual environment when done
+deactivate
