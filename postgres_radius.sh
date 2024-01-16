@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Function to symlink the SQL module to mods-enabled if not already linked
+enable_sql_module() {
+    local mods_available="/etc/freeradius/3.0/mods-available/sql"
+    local mods_enabled="/etc/freeradius/3.0/mods-enabled/sql"
+
+    if [[ ! -L "$mods_enabled" && -e "$mods_available" ]]; then
+        ln -s "$mods_available" "$mods_enabled"
+        echo "SQL module enabled in FreeRADIUS."
+    else
+        echo "SQL module already enabled."
+    fi
+}
+
 # Function to update FreeRADIUS SQL configuration
 update_freeradius_config() {
     local db_user=$1
@@ -43,6 +56,9 @@ read -p "Enter PostgreSQL server address [localhost]: " db_server
 db_server=${db_server:-localhost} # Default value if left blank
 read -p "Enter PostgreSQL server port [5432]: " db_port
 db_port=${db_port:-5432} # Default value if left blank
+
+# Enable the SQL module in FreeRADIUS
+enable_sql_module
 
 # Update FreeRADIUS configuration
 update_freeradius_config $db_user $db_pass $db_name $db_server $db_port
