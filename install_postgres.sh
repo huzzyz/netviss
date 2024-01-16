@@ -29,7 +29,7 @@ source $VENV_DIR/bin/activate
 
 # Install required Python packages
 echo "Installing required Python packages..."
-pip install psycopg2-binary bcrypt
+pip install psycopg2-binary bcrypt Faker
 
 # Check if the Python script exists
 if [ -f "$PYTHON_SCRIPT" ]; then
