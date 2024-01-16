@@ -6,5 +6,8 @@ sudo apt-get update
 # Install PostgreSQL and its dependencies
 sudo apt-get install -y postgresql postgresql-contrib
 
-# Optional: Secure the installation (set password for the PostgreSQL user, etc.)
-# sudo passwd postgres
+# Install pip for Python 3
+sudo apt-get install -y python3-pip
+
+# Install bcrypt using pip
+pip3 install bcrypt
