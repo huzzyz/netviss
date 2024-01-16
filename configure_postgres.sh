@@ -4,8 +4,8 @@
 DB_NAME="netviss"
 TABLE_NAME="users"
 
-# Create Database
-createdb $DB_NAME
+# Create Database with UTF-8 encoding
+createdb --encoding=UTF8 --template=template0 --lc-collate='en_US.utf8' --lc-ctype='en_US.utf8' $DB_NAME
 
 # Connect to Database and Execute SQL Commands
 psql $DB_NAME << EOF
