@@ -8,8 +8,8 @@ fake = Faker()
 
 # Database connection parameters
 db_name = "netviss"
-user = "ali"  # Replace with your PostgreSQL username
-password = "ali123"  # Replace with your PostgreSQL password
+user = "postgres"  # Replace with your PostgreSQL username
+password = "postgres321"  # Replace with your PostgreSQL password
 host = "localhost"  # Or your database host
 port = "5432"  # Or your database port
 
@@ -17,7 +17,7 @@ port = "5432"  # Or your database port
 conn = psycopg2.connect(dbname=db_name, user=user, password=password, host=host, port=port)
 cur = conn.cursor()
 
-# Number of random entries to create (reduced to 10)
+# Number of random entries to create
 num_entries = 10
 
 for _ in range(num_entries):
@@ -27,9 +27,10 @@ for _ in range(num_entries):
     
     # Generate a random password and hash it using bcrypt with a salt round of 10
     raw_password = fake.password()
-    hashed_password = bcrypt.hashpw(raw_password.encode('utf-8'), bcrypt.gensalt(10))
+    hashed_password = bcrypt.hashpw(raw_password.encode('utf-8'), bcrypt.gensalt(10)).decode('utf-8')
 
-    status = random.randint(0, 1)  # Randomly choosing between 0 and 1
+    # Randomly assign a status of either 0 or 1
+    status = random.randint(0, 1)
 
     # Inserting the data into the database
     cur.execute("INSERT INTO users (full_name, username, auth_type, password, status) VALUES (%s, %s, %s, %s, %s)",
