@@ -12,11 +12,17 @@ sudo apt-get install -y postgresql postgresql-contrib
 echo "Installing pip for Python 3..."
 sudo apt-get install -y python3-pip
 
+# Install psycopg2-binary for PostgreSQL connectivity
+echo "Installing psycopg2-binary for PostgreSQL connectivity..."
+sudo apt-get install -y libpq-dev  # Required for psycopg2-binary
+pip3 install psycopg2-binary  # Using pip3 to install for Python 3
+
 # Install virtualenv
 echo "Installing virtualenv..."
 sudo apt-get install -y python3-venv
 
-# Define the virtual environment directory
+# Define the Python script and virtual environment directory
+PYTHON_SCRIPT="generate_random_entries.py"
 VENV_DIR="python_venv"
 
 # Create a Python virtual environment
@@ -26,11 +32,20 @@ python3 -m venv $VENV_DIR
 # Activate the virtual environment
 source $VENV_DIR/bin/activate
 
-# Install bcrypt using pip
-echo "Installing bcrypt..."
-pip install bcrypt
+# Install required Python packages
+echo "Installing required Python packages..."
+pip install bcrypt Faker
+
+# Check if the Python script exists
+if [ -f "$PYTHON_SCRIPT" ]; then
+    # Run the Python script
+    echo "Running the Python script to generate random database entries..."
+    python $PYTHON_SCRIPT
+else
+    echo "Error: Python script not found: $PYTHON_SCRIPT"
+fi
 
 # Deactivate the virtual environment
 deactivate
 
-echo "PostgreSQL installation and Python setup with bcrypt completed."
+echo "Script execution completed."
