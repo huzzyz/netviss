@@ -1,0 +1,230 @@
+---
+- name: Setup Nginx SSL Configuration (No Internet Required)
+  hosts: localhost
+  become: yes
+
+  vars:
+    ssl_cert_dir: /netviss-storage/certs/server
+    ssl_key_dir:  /netviss-storage/certs/privatekey
+    ssl_cert_path: "{{ ssl_cert_dir }}/default.crt"
+    ssl_key_path:  "{{ ssl_key_dir }}/default.key"
+
+    nginx_config_dir:  /etc/nginx/sites-available
+    nginx_enabled_dir: /etc/nginx/sites-enabled
+
+    domain_name: netviss.com
+    system_user: root
+    system_group: root
+
+  tasks:
+    ###################################################################
+    # 1. Certificate generation / permissions
+    ###################################################################
+    - name: Create directories for SSL certificates
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+      loop:
+        - "{{ ssl_cert_dir }}"
+        - "{{ ssl_key_dir }}"
+
+    - name: Generate self‑signed SSL certificate (only if key missing)
+      command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout "{{ ssl_key_path }}"
+        -out    "{{ ssl_cert_path }}"
+        -subj   "/CN={{ domain_name }}"
+      args:
+        creates: "{{ ssl_key_path }}"
+
+    - name: Set permissions on SSL certificate
+      file:
+        path: "{{ ssl_cert_path }}"
+        mode: '0644'
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+
+    - name: Set permissions on SSL private key
+      file:
+        path: "{{ ssl_key_path }}"
+        mode: '0600'
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+
+    - name: Copy SSL certificate to certs/server
+      copy:
+        src: "{{ ssl_cert_path }}"
+        dest: /netviss-storage/certs/server/default.crt
+        mode: '0644'
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+        remote_src: yes
+
+    - name: Copy SSL private key to certs/privatekey
+      copy:
+        src: "{{ ssl_key_path }}"
+        dest: /netviss-storage/certs/privatekey/default.key
+        mode: '0600'
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+        remote_src: yes
+
+    ###################################################################
+    # 2. Nginx configuration cleanup
+    ###################################################################
+    - name: Find all files in sites-available
+      find:
+        paths: "{{ nginx_config_dir }}"
+        file_type: file
+      register: available_configs
+
+    - name: Remove files in sites-available
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ available_configs.files }}"
+      when: available_configs.matched > 0
+      notify: Restart Nginx
+
+    - name: Find all symlinks in sites-enabled
+      find:
+        paths: "{{ nginx_enabled_dir }}"
+        file_type: link
+      register: enabled_symlinks
+
+    - name: Remove symlinks in sites-enabled
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ enabled_symlinks.files }}"
+      when: enabled_symlinks.matched > 0
+      notify: Restart Nginx
+
+    ###################################################################
+    # 3. Deploy new Nginx configs
+    ###################################################################
+    - name: Create Nginx configuration files
+      copy:
+        dest: "{{ nginx_config_dir }}/{{ item.file }}"
+        content: "{{ item.content }}"
+        owner: "{{ system_user }}"
+        group: "{{ system_group }}"
+        mode: '0644'
+      loop:
+        - file: captive-redirect-http.conf
+          content: |
+            server {
+                listen 8081;
+                server_name {{ domain_name }};
+                location / {
+                    return 301 https://$server_addr:8001/captiveportal$uri$is_args$args;
+                }
+            }
+        - file: captive-redirect-https.conf
+          content: |
+            server {
+                listen 8080 ssl http2;
+                server_name {{ domain_name }};
+                ssl_certificate {{ ssl_cert_path }};
+                ssl_certificate_key {{ ssl_key_path }};
+                location / {
+                    return 301 https://$server_addr:8001/captiveportal$uri$is_args$args;
+                }
+            }
+        - file: captive-portal.conf
+          content: |
+            server {
+                listen 8001 ssl http2;
+                server_name {{ domain_name }};
+                ssl_certificate {{ ssl_cert_path }};
+                ssl_certificate_key {{ ssl_key_path }};
+                location / {
+                    proxy_pass http://127.0.0.1:8000$uri$is_args$args;
+                }
+            }
+        - file: forbidden.conf
+          content: |
+            server {
+                listen 8403 ssl;
+                server_name {{ domain_name }};
+                ssl_certificate {{ ssl_cert_path }};
+                ssl_certificate_key {{ ssl_key_path }};
+                location / {
+                    return 301 https://$server_addr:53000/forbidden;
+                }
+            }
+        - file: forbidden2.conf
+          content: |
+            server {
+                listen 8405 ssl;
+                server_name {{ domain_name }};
+                ssl_certificate {{ ssl_cert_path }};
+                ssl_certificate_key {{ ssl_key_path }};
+                location / {
+                    return 301 https://$server_addr:53000/forbidden;
+                }
+            }
+        - file: redirect.conf
+          content: |
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                server_name _;
+                return 301 https://$host:53000$request_uri;
+            }
+        - file: portal.conf
+          content: |
+            server {
+              listen 53000 ssl;
+              server_name localhost;
+
+              ssl_certificate {{ ssl_cert_path }};
+              ssl_certificate_key {{ ssl_key_path }};
+
+              location /api/ {
+                proxy_pass http://127.0.0.1:3000/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+
+              location / {
+                root /var/www/portal;
+                index index.html;
+                try_files $uri $uri/ /index.html;
+              }
+            }
+      notify: Restart Nginx
+
+    - name: Enable Nginx configurations via symlinks
+      file:
+        src: "{{ nginx_config_dir }}/{{ item }}"
+        dest: "{{ nginx_enabled_dir }}/{{ item }}"
+        state: link
+      loop:
+        - captive-redirect-http.conf
+        - captive-redirect-https.conf
+        - captive-portal.conf
+        - forbidden.conf
+        - forbidden2.conf
+        - redirect.conf
+        - portal.conf
+      notify: Restart Nginx
+
+    - name: Ensure Nginx service is started and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+  ###################################################################
+  # Handler
+  ###################################################################
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
